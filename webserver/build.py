@@ -11,7 +11,7 @@ socket = SocketIO(app, cors_allowed_origins="*")
 
 # change this so rhat you can connect to your redis server
 # ===============================================
-redis_server = redis.Redis("YOUR_SERVER")
+redis_server = redis.Redis(host="127.0.0.1", port=6379)
 # ===============================================
 
 # Translate OSM coordinate (longitude, latitude) to SVG coordinates (x,y).
@@ -25,11 +25,13 @@ def translate(coords_osm):
 
     x_osm = coords_osm[0]
     y_osm = coords_osm[1]
+    
+    lon, lat = coords_osm
 
     x_ratio = (x_svg_lim[1] - x_svg_lim[0]) / (x_osm_lim[1] - x_osm_lim[0])
     y_ratio = (y_svg_lim[1] - y_svg_lim[0]) / (y_osm_lim[1] - y_osm_lim[0])
-    x_svg = x_ratio * (x_osm - x_osm_lim[0]) + x_svg_lim[0]
-    y_svg = y_ratio * (y_osm_lim[1] - y_osm) + y_svg_lim[0]
+    x_svg = x_ratio * (lon - x_osm_lim[0]) + x_svg_lim[0]
+    y_svg = y_ratio * (y_osm_lim[1] - lat) + y_svg_lim[0]
 
     return x_svg, y_svg
 
@@ -42,10 +44,10 @@ def get_location():
     while True:
         #get your longitude and latitude from the Redis server
         # ====================================================
-        longitude = None
-        latitude = None
+        lon = float(redis_server.get('longitude'))
+        lat = float(redis_server.get('latitude'))
         # ====================================================
-        x_svg, y_svg = translate((longitude, latitude))
+        x_svg, y_svg = translate((lon, lat))
         emit('get_location', (x_svg, y_svg))
         time.sleep(0.01)
 
